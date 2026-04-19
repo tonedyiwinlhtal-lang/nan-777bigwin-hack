@@ -1,77 +1,73 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-display: "Bricolage Grotesque", sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-serif: "Playfair Display", serif;
   --animate-spin-slow: spin 8s linear infinite;
 }
 
 @layer base {
   body {
-    @apply bg-[#020205] text-[#e2e2e9] antialiased selection:bg-indigo-500/30;
+    @apply bg-[#030303] text-[#e2e2e9] antialiased selection:bg-indigo-500/30 overflow-x-hidden;
   }
 }
 
 @layer utilities {
-  .bg-radial-glow {
-    background: radial-gradient(circle at center, rgba(99, 102, 241, 0.4) 0%, transparent 70%);
+  .bg-obsidian-gradient {
+    background: linear-gradient(180deg, #030303 0%, #050508 100%);
+  }
+
+  .bg-neural-mesh {
+    background-image: radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.05) 1px, transparent 0);
+    background-size: 24px 24px;
   }
   
   .glass-quantum {
-    @apply bg-white/[0.03] backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)];
+    @apply bg-black/40 backdrop-blur-2xl border border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.9)];
   }
   
   .glass-card-premium {
-    @apply bg-gradient-to-b from-white/[0.08] to-transparent backdrop-blur-md border border-white/10 shadow-2xl;
+    @apply bg-gradient-to-br from-white/[0.05] via-transparent to-black/20 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)];
+  }
+
+  .data-divider {
+    @apply border-white/5 border-t border-b;
   }
 
   .glow-indigo {
-    @apply shadow-[0_0_30px_rgba(99,102,241,0.2)];
-  }
-
-  .glow-rose-premium {
-    @apply shadow-[0_0_30px_rgba(244,63,94,0.15)];
+    @apply shadow-[0_0_40px_rgba(99,102,241,0.25)];
   }
 
   .text-glow-indigo {
-    @apply drop-shadow-[0_0_12px_rgba(99,102,241,0.6)];
+    @apply drop-shadow-[0_0_15px_rgba(99,102,241,0.7)];
   }
 
-  .text-glow-rose-premium {
-    @apply drop-shadow-[0_0_12px_rgba(244,63,94,0.6)];
-  }
-
-  .nebula-bg {
-    background: 
-      radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, rgba(244, 63, 94, 0.1) 0%, transparent 50%);
+  .text-glow-emerald {
+    @apply drop-shadow-[0_0_15px_rgba(16,185,129,0.7)];
   }
 
   .custom-scrollbar::-webkit-scrollbar {
-    width: 3px;
+    width: 2px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-indigo-500/20 rounded-full hover:bg-indigo-500/40 transition-colors;
+    @apply bg-white/10 rounded-full hover:bg-white/20 transition-all;
+  }
+
+  .technical-label {
+    @apply font-mono text-[9px] uppercase tracking-[0.4em] text-zinc-600 font-bold;
   }
 }
 
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(1000%); }
+@keyframes neural-pulse {
+  0%, 100% { opacity: 0.1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.05); }
 }
 
-.scanline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(to right, transparent, rgba(99, 102, 241, 0.2), transparent);
-  animation: scanline 8s linear infinite;
-  pointer-events: none;
+.neural-pulse {
+  animation: neural-pulse 4s ease-in-out infinite;
 }

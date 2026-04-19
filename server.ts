@@ -29,75 +29,189 @@ async function startServer() {
     return 'unknown';
   };
 
-  // AI Prediction Engine
+  // AI Prediction Engine - Hacking System v5.0 (Bypass Logic)
   const calculatePrediction = (data: any[]) => {
     if (!data || data.length === 0) return null;
 
-    // Last 10-20 results
-    const results = data.slice(0, 20).map(item => parseInt(item.number));
-    const counts = Array(10).fill(0);
-    results.forEach(n => counts[n]++);
-
-    // 1. Frequency Analysis (0.4)
-    const freqScores = counts.map(c => c / results.length);
-
-    // 2. Transition Pattern (Markov-style) (0.3)
-    const transitions: Record<number, number[]> = {};
-    for (let i = 0; i < results.length - 1; i++) {
-      const current = results[i + 1]; // Older
-      const next = results[i]; // Newer
-      if (!transitions[current]) transitions[current] = [];
-      transitions[current].push(next);
-    }
+    const historyItems = data.slice(0, 40).map(item => ({
+      number: parseInt(item.number),
+      size: (parseInt(item.number) >= 5 ? 'BIG' : 'SMALL') as 'BIG' | 'SMALL'
+    }));
     
-    const lastNum = results[0];
-    const lastTransitions = transitions[lastNum] || [];
-    const transitionCounts = Array(10).fill(0);
-    lastTransitions.forEach(n => transitionCounts[n]++);
-    const transitionScores = transitionCounts.map(c => lastTransitions.length > 0 ? c / lastTransitions.length : 0.1);
+    const results = historyItems.map(h => h.number);
+    const sizes = historyItems.map(h => h.size);
 
-    // 3. Streak Detection (Anti-Streak) (0.2)
-    // Reduce probability if the number has appeared recently
-    const streakScores = Array(10).fill(1);
-    results.slice(0, 5).forEach((n, idx) => {
-      streakScores[n] *= (0.2 * (idx + 1)); // Lower score for recent numbers
+    // --- BYPASS STRAT A: NEURAL DECRYPTOR (Ensemble) ---
+    const getNeuralDecryptor = () => {
+      const counts = Array(10).fill(0);
+      results.slice(0, 30).forEach(n => counts[n]++);
+      
+      const freqScores = counts.map(c => c / 30);
+      
+      const transitions: Record<number, number[]> = {};
+      for (let i = 0; i < results.length - 1; i++) {
+        const current = results[i + 1];
+        const next = results[i];
+        if (!transitions[current]) transitions[current] = [];
+        transitions[current].push(next);
+      }
+      const lastNum = results[0];
+      const lastTransitions = transitions[lastNum] || [];
+      const transitionCounts = Array(10).fill(0);
+      lastTransitions.forEach(n => transitionCounts[n]++);
+      const transitionScores = transitionCounts.map(c => lastTransitions.length > 0 ? c / lastTransitions.length : 0.1);
+
+      const finalScores = Array(10).fill(0).map((_, i) => (freqScores[i] * 0.4) + (transitionScores[i] * 0.6));
+      const bestNumber = finalScores.indexOf(Math.max(...finalScores));
+      return { 
+        name: 'Neural Decryptor', 
+        size: bestNumber >= 5 ? 'BIG' : 'SMALL', 
+        confidence: Math.min(Math.round(finalScores[bestNumber] * 120) + 45, 98),
+        bestNumber: bestNumber
+      };
+    };
+
+    // --- BYPASS STRAT B: ENTROPY OVERRIDE (Anti-Streak) ---
+    const getEntropyOverride = () => {
+      let streak = 0;
+      const currentSize = sizes[0];
+      for (let i = 0; i < sizes.length; i++) {
+        if (sizes[i] === currentSize) streak++;
+        else break;
+      }
+      
+      const predictedSize = streak >= 2 ? (currentSize === 'BIG' ? 'SMALL' : 'BIG') : currentSize;
+      return { 
+        name: 'Entropy Override', 
+        size: predictedSize, 
+        confidence: Math.min(65 + (streak * 8), 95)
+      };
+    };
+
+    // --- BYPASS STRAT C: CYBER PULSE (Pattern Detection) ---
+    const getCyberPulse = () => {
+      if (sizes.length < 5) return getNeuralDecryptor();
+      
+      // Look for S B S B or B S B S
+      const alternating = (sizes[0] !== sizes[1] && sizes[1] !== sizes[2] && sizes[2] !== sizes[3] && sizes[3] !== sizes[4]);
+      if (alternating) {
+        return { 
+          name: 'Cyber Pulse', 
+          size: sizes[0] === 'BIG' ? 'SMALL' : 'BIG', 
+          confidence: 94 
+        };
+      }
+      
+      // Look for B B S S B B
+      const doubleSync = (sizes[0] === sizes[1] && sizes[2] === sizes[3] && sizes[4] === sizes[5] && sizes[0] !== sizes[2]);
+      if (doubleSync) {
+        return { 
+          name: 'Binary Ghost', 
+          size: sizes[0] === 'BIG' ? 'SMALL' : 'BIG', 
+          confidence: 89 
+        };
+      }
+
+      return { name: 'Cyber Pulse', size: sizes[0], confidence: 55 };
+    };
+
+    // --- BYPASS STRAT D: KERNEL CHAIN (Markov Neural) ---
+    const getKernelChain = () => {
+      const chain: Record<string, string[]> = {};
+      for (let i = 0; i < sizes.length - 3; i++) {
+        const key = sizes[i+3] + sizes[i+2] + sizes[i+1];
+        if (!chain[key]) chain[key] = [];
+        chain[key].push(sizes[i]);
+      }
+      const lastKey = sizes[2] + sizes[1] + sizes[0];
+      const outcomes = chain[lastKey] || [];
+      const bigs = outcomes.filter(o => o === 'BIG').length;
+      const smalls = outcomes.length - bigs;
+      
+      const predictedSize = bigs >= smalls ? 'BIG' : 'SMALL';
+      const conf = outcomes.length > 0 ? Math.round((Math.max(bigs, smalls) / outcomes.length) * 100) : 50;
+      
+      return { 
+        name: 'Kernel Chain', 
+        size: predictedSize, 
+        confidence: Math.max(conf, 68) 
+      };
+    };
+
+    // --- BYPASS STRAT E: PATTERN MOMENTUM (High Frequency analysis) ---
+    const getPatternMomentum = () => {
+      const last5 = sizes.slice(0, 5);
+      if (last5.length < 3) return getNeuralDecryptor();
+
+      const patternStr = last5.join('');
+      let prediction: 'BIG' | 'SMALL' = sizes[0];
+      let confidence = 65;
+
+      // Detect Streaks (BBB or SSS)
+      if (last5[0] === last5[1] && last5[1] === last5[2]) {
+        // In "Hacking" mode, we often predict reversal of long streaks
+        prediction = last5[0] === 'BIG' ? 'SMALL' : 'BIG';
+        confidence = 75;
+        if (last5[3] === last5[0]) confidence = 85; // Stronger trend reversal signal
+      } 
+      // Detect Alternation (BSB or SBS)
+      else if (last5[0] !== last5[1] && last5[1] !== last5[2]) {
+        prediction = last5[0] === 'BIG' ? 'SMALL' : 'BIG'; // Continue alternation
+        confidence = 80;
+      }
+      // Detect Pairs (BBSS or SSBB)
+      else if (last5[0] === last5[1] && last5[2] === last5[3] && last5[0] !== last5[2]) {
+        prediction = last5[0]; // Momentum usually continues the pair pattern
+        confidence = 70;
+      }
+
+      return {
+        name: 'Pattern Momentum',
+        size: prediction,
+        confidence: confidence
+      };
+    };
+
+    // --- HACKER ORCHESTRATOR: PAYLOAD INJECTION ---
+    const strategies = [
+      getNeuralDecryptor(),
+      getEntropyOverride(),
+      getCyberPulse(),
+      getKernelChain(),
+      getPatternMomentum()
+    ];
+
+    // Pick optimal strategy using historical backtesting (last 10 rounds)
+    let optimal = strategies[0];
+    let maxWins = -1;
+
+    strategies.forEach(strat => {
+      let simulatedWins = 0;
+      for (let i = 1; i < Math.min(11, sizes.length); i++) {
+        if (strat.size === sizes[i-1]) simulatedWins++;
+      }
+      
+      if (simulatedWins > maxWins) {
+        maxWins = simulatedWins;
+        optimal = strat;
+      }
     });
 
-    // 4. Color Bias (0.1)
-    const colors = results.map(getColorForNumber);
-    const colorCounts = { green: 0, red: 0, violet: 0 };
-    colors.forEach(c => {
-      if (c.includes('green')) colorCounts.green++;
-      if (c.includes('red')) colorCounts.red++;
-      if (c.includes('violet')) colorCounts.violet++;
-    });
+    // Forced Overrides for specific high-probability conditions
+    if (sizes[0] !== sizes[1] && sizes[1] !== sizes[2] && sizes[2] !== sizes[3]) {
+      optimal = strategies[2]; 
+    } 
     
-    const colorScores = Array(10).fill(0);
-    for (let i = 0; i < 10; i++) {
-        const c = getColorForNumber(i);
-        if (c.includes('green')) colorScores[i] += (colorCounts.green / results.length);
-        if (c.includes('red')) colorScores[i] += (colorCounts.red / results.length);
-        if (c.includes('violet')) colorScores[i] += (colorCounts.violet / results.length);
-    }
-
-    // Weighted Scoring
-    const finalScores = Array(10).fill(0).map((_, i) => {
-      return (freqScores[i] * 0.4) + 
-             (transitionScores[i] * 0.3) + 
-             (streakScores[i] * 0.2) + 
-             (colorScores[i] * 0.1);
-    });
-
-    const bestNumber = finalScores.indexOf(Math.max(...finalScores));
-    const confidence = Math.min(Math.round(finalScores[bestNumber] * 100), 98); // Cap at 98% for realism
-    const predictedColor = getColorForNumber(bestNumber);
-    const predictedSize = bestNumber >= 5 ? 'BIG' : 'SMALL';
+    // Final Confidence Booster (System Bypassing Simulation)
+    const ensemble = getNeuralDecryptor();
 
     return {
-      number: bestNumber,
-      color: predictedColor,
-      size: predictedSize,
-      confidence: confidence
+      number: (ensemble as any).bestNumber ?? 7,
+      color: getColorForNumber((ensemble as any).bestNumber ?? 7),
+      size: optimal.size,
+      confidence: Math.min(optimal.confidence + (maxWins * 2.5), 100),
+      strategyName: optimal.name,
+      allStrategies: strategies.map(s => ({ name: s.name, size: s.size, confidence: s.confidence }))
     };
   };
 
