@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Bricolage Grotesque", sans-serif;
+  --animate-spin-slow: spin 8s linear infinite;
+}
+
+@layer base {
+  body {
+    @apply bg-[#020205] text-[#e2e2e9] antialiased selection:bg-indigo-500/30;
+  }
+}
+
+@layer utilities {
+  .bg-radial-glow {
+    background: radial-gradient(circle at center, rgba(99, 102, 241, 0.4) 0%, transparent 70%);
+  }
+  
+  .glass-quantum {
+    @apply bg-white/[0.03] backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)];
+  }
+  
+  .glass-card-premium {
+    @apply bg-gradient-to-b from-white/[0.08] to-transparent backdrop-blur-md border border-white/10 shadow-2xl;
+  }
+
+  .glow-indigo {
+    @apply shadow-[0_0_30px_rgba(99,102,241,0.2)];
+  }
+
+  .glow-rose-premium {
+    @apply shadow-[0_0_30px_rgba(244,63,94,0.15)];
+  }
+
+  .text-glow-indigo {
+    @apply drop-shadow-[0_0_12px_rgba(99,102,241,0.6)];
+  }
+
+  .text-glow-rose-premium {
+    @apply drop-shadow-[0_0_12px_rgba(244,63,94,0.6)];
+  }
+
+  .nebula-bg {
+    background: 
+      radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, rgba(244, 63, 94, 0.1) 0%, transparent 50%);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-indigo-500/20 rounded-full hover:bg-indigo-500/40 transition-colors;
+  }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(99, 102, 241, 0.2), transparent);
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+}
