@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Shield, 
@@ -19,8 +19,27 @@ import {
   Plus,
   RefreshCw,
   LayoutDashboard,
-  ShieldAlert
+  ShieldAlert,
+  Globe,
+  Lock,
+  BarChart3,
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell
+} from 'recharts';
 import { useAuth } from './FirebaseProvider';
 import { KeyManager } from './KeyManager';
 
@@ -35,10 +54,20 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }, []);
 
   const stats = [
-    { label: 'NETWORK_INTEGRITY', value: '99.98%', icon: Shield, color: 'text-indigo-500', trend: 'STABLE' },
-    { label: 'UPLINK_BANDWIDTH', value: '1.2 Gbps', icon: Zap, color: 'text-amber-500', trend: 'PEAK' },
-    { label: 'NEURAL_LOAD', value: '2.4%', icon: Cpu, color: 'text-rose-500', trend: 'LOW' },
-    { label: 'DATABASE_LOCKED', value: 'ENCRYPTED', icon: Database, color: 'text-emerald-500', trend: 'MAX' },
+    { label: 'NETWORK_INTEGRITY', value: '99.98%', icon: Shield, color: 'text-indigo-500', trend: '+0.02%', status: 'HEALTHY' },
+    { label: 'UPLINK_BANDWIDTH', value: '1.4 Gbps', icon: Zap, color: 'text-amber-500', trend: 'PEAK_LOAD', status: 'STABLE' },
+    { label: 'NEURAL_LATENCY', value: '8.4 ms', icon: Activity, color: 'text-rose-500', trend: '-2.1ms', status: 'OPTIMAL' },
+    { label: 'STORAGE_ENCRYPTED', value: '1.2 TB', icon: Database, color: 'text-emerald-500', trend: 'REDUNDANT', status: 'SECURED' },
+  ];
+
+  const chartData = [
+    { name: '00:00', load: 45, users: 120 },
+    { name: '04:00', load: 30, users: 85 },
+    { name: '08:00', load: 65, users: 450 },
+    { name: '12:00', load: 85, users: 890 },
+    { name: '16:00', load: 75, users: 670 },
+    { name: '20:00', load: 90, users: 1100 },
+    { name: '23:59', load: 55, users: 430 },
   ];
 
   return (
@@ -188,81 +217,96 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                        <div className="flex justify-between items-center mb-12">
                          <div>
                             <h3 className="text-xs font-black text-white uppercase tracking-[0.4em] italic flex items-center gap-3">
-                               <Activity className="w-4 h-4 text-indigo-500" />
-                               Neural_Synergy_Fluctuation
+                               <BarChart3 className="w-4 h-4 text-indigo-500" />
+                               Neural_Synergy_Projection
                             </h3>
-                            <p className="text-[8px] font-mono text-zinc-600 uppercase mt-1 tracking-widest">Real-time_Pattern_Recognition_Metrics</p>
+                            <p className="text-[8px] font-mono text-zinc-600 uppercase mt-1 tracking-widest">Real-time_Temporal_Inference_Core</p>
                          </div>
-                         <div className="flex gap-3">
-                           <button className="px-4 py-2 bg-indigo-500 text-white text-[8px] font-black rounded-lg uppercase tracking-widest shadow-lg shadow-indigo-500/20">Active</button>
-                           <button className="px-4 py-2 bg-white/5 text-zinc-500 text-[8px] font-black rounded-lg uppercase tracking-widest">History</button>
+                         <div className="flex gap-3 bg-white/5 p-1 rounded-xl">
+                           <button className="px-4 py-2 bg-indigo-500 text-white text-[8px] font-black rounded-lg uppercase tracking-widest shadow-lg shadow-indigo-500/20">LIVE</button>
+                           <button className="px-4 py-2 text-zinc-500 text-[8px] font-black rounded-lg uppercase tracking-widest hover:text-white transition-colors">ARCHIVE</button>
                          </div>
                        </div>
                        
-                       <div className="h-72 flex items-end gap-3 px-4 relative">
-                         <div className="absolute inset-0 flex flex-col justify-between opacity-10 pointer-events-none pr-8">
-                            {[0, 1, 2, 3, 4].map(i => <div key={i} className="border-b border-white/60 w-full" />)}
-                         </div>
-                         {[45, 80, 55, 95, 75, 85, 60, 40, 100, 70, 50, 85, 65, 45, 90, 70].map((h, i) => (
-                           <motion.div 
-                             key={i}
-                             initial={{ height: 0 }}
-                             animate={{ height: `${h}%` }}
-                             transition={{ delay: i * 0.04, type: 'spring', stiffness: 100 }}
-                             className="flex-1 bg-gradient-to-t from-indigo-600/10 via-indigo-500/40 to-indigo-400 rounded-full relative group cursor-pointer"
-                           >
-                              <motion.div 
-                                 initial={{ opacity: 0 }}
-                                 whileHover={{ opacity: 1 }}
-                                 className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black border border-white/10 text-white text-[9px] font-black font-mono px-3 py-1.5 rounded-xl shadow-2xl backdrop-blur-xl z-20 whitespace-nowrap"
-                              >
-                                LOAD: {h}.00%
-                              </motion.div>
-                           </motion.div>
-                         ))}
+                       <div className="h-80 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData}>
+                              <defs>
+                                <linearGradient id="colorLoad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                              <XAxis 
+                                dataKey="name" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fill: '#52525b', fontSize: 9, fontWeight: 900 }} 
+                              />
+                              <Tooltip 
+                                contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '16px', fontSize: '10px', color: '#fff' }}
+                                itemStyle={{ color: '#818cf8' }}
+                                cursor={{ stroke: '#6366f120', strokeWidth: 2 }}
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="load" 
+                                stroke="#6366f1" 
+                                strokeWidth={4}
+                                fillOpacity={1} 
+                                fill="url(#colorLoad)" 
+                                animationDuration={2000}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
                        </div>
                     </div>
 
-                    {/* Threat Intel */}
-                    <div className="glass-card-premium p-10 rounded-[3.5rem] border-white/5 bg-white/[0.01]">
+                    {/* Threat Intel / Health */}
+                    <div className="glass-card-premium p-10 rounded-[3.5rem] border-white/5 bg-white/[0.01] flex flex-col">
                        <div className="mb-10">
                           <h3 className="text-xs font-black text-white uppercase tracking-[0.4em] italic flex items-center gap-3">
-                             <ShieldAlert className="w-4 h-4 text-rose-500" />
-                             System_Threat_Map
+                             <Globe className="w-4 h-4 text-rose-500" />
+                             Auth_Network_Velocity
                           </h3>
                        </div>
                        
-                       <div className="space-y-8">
+                       <div className="flex-1 space-y-8">
                          {[
-                           { label: 'Brute_Force_Blocked', val: '2,481', status: 'PROTECTED', c: 'text-emerald-500' },
-                           { label: 'Injection_Intercepts', val: '142', status: 'SECURED', c: 'text-indigo-400' },
-                           { label: 'Unauthorized_Queries', val: '12', status: 'BLOCKED', c: 'text-rose-500' },
-                           { label: 'Kernel_Integrity', val: '100%', status: 'NOMINAL', c: 'text-emerald-500' },
+                           { label: 'Brute_Force_Mitigation', val: '2.5k', status: 'NOMINAL', progress: 85, color: '#f43f5e' },
+                           { label: 'Session_Integrity', val: '99.9%', status: 'STABLE', progress: 100, color: '#10b981' },
+                           { label: 'Request_Filtering', val: 'Active', status: 'SECURED', progress: 92, color: '#6366f1' },
                          ].map((item, i) => (
-                           <motion.div 
-                              key={i}
-                              initial={{ opacity: 0, x: 20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.1 }}
-                              className="group"
-                           >
-                              <div className="flex justify-between items-center mb-3">
-                                 <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{item.label}</p>
-                                 <span className={`text-[7px] font-black ${item.c} border border-current px-2 py-0.5 rounded-full`}>{item.status}</span>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                 <p className="text-xl font-black text-white italic tracking-tighter">{item.val}</p>
-                                 <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                     <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: '100%' }}
-                                        transition={{ duration: 1.5, delay: i * 0.2 }}
-                                        className={`h-full bg-current ${item.c}`} 
-                                      />
-                                 </div>
-                              </div>
-                           </motion.div>
+                            <div key={i} className="space-y-4">
+                               <div className="flex justify-between items-end">
+                                  <div className="space-y-1">
+                                     <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">{item.label}</p>
+                                     <p className="text-lg font-black text-white italic tracking-tighter">{item.val}</p>
+                                  </div>
+                                  <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest bg-white/5 px-2 py-1 rounded-lg border border-white/5">{item.status}</span>
+                               </div>
+                               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${item.progress}%` }}
+                                    transition={{ duration: 1.5, delay: i * 0.2 }}
+                                    className="h-full rounded-full shadow-[0_0_10px_currentcolor]"
+                                    style={{ backgroundColor: item.color, color: item.color }}
+                                  />
+                               </div>
+                            </div>
                          ))}
+                       </div>
+
+                       <div className="mt-8 pt-8 border-t border-white/5">
+                          <div className="flex items-center gap-4 p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
+                             <Shield className="w-5 h-5 text-indigo-500" />
+                             <div>
+                                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest tracking-[0.2em]">Firewall::Active</p>
+                                <p className="text-[8px] font-mono text-indigo-200/40 uppercase">Filter_Version_2.4.0</p>
+                             </div>
+                          </div>
                        </div>
                     </div>
                   </div>
@@ -359,6 +403,14 @@ const KeyManagerEmbedContent: React.FC = () => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [duration, setDuration] = useState('1h');
   const [keyLabel, setKeyLabel] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredKeys = useMemo(() => {
+    return keys.filter(k => 
+      k.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      k.keyLabel?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [keys, searchQuery]);
 
   const durationOptions = [
     { label: '5m', value: '5m' },
@@ -499,16 +551,33 @@ const KeyManagerEmbedContent: React.FC = () => {
             </button>
        </div>
 
-       <div className="flex items-center justify-between px-2">
+       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
             <h4 className="text-[10px] font-black text-indigo-500/60 uppercase tracking-[0.5em]">Active_Payloads</h4>
-            <button onClick={fetchKeys} className="text-zinc-500 hover:text-white transition-colors">
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-64">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" />
+                    <input 
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="FILTER_KEYS..."
+                        className="w-full bg-white/[0.02] border border-white/5 rounded-xl h-10 pl-10 pr-4 text-[10px] font-mono text-white placeholder:text-zinc-700 focus:border-indigo-500/30 transition-all outline-none"
+                    />
+                </div>
+                <button onClick={fetchKeys} className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+            </div>
        </div>
 
        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
-            {keys.map((key) => (
+            {filteredKeys.length === 0 ? (
+                <div className="col-span-full py-20 text-center glass-card-premium rounded-[2rem] border-white/5">
+                    <p className="text-[10px] font-mono font-black text-zinc-700 uppercase tracking-widest">No_Auth_Vectors_Found</p>
+                </div>
+            ) : (
+                filteredKeys.map((key) => (
                 <motion.div 
                     layout
                     initial={{ opacity: 0, y: 10 }}
@@ -553,7 +622,7 @@ const KeyManagerEmbedContent: React.FC = () => {
                         </button>
                     </div>
                 </motion.div>
-            ))}
+            )))}
           </AnimatePresence>
        </div>
     </div>
