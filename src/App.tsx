@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Target, X, BarChart3, History, RefreshCcw, Wifi, WifiOff, Loader2, Settings, Key, Save, CheckCircle2, Send, Trophy, Skull, Brain, Cpu, Zap, Activity, Hash, ShieldAlert, Terminal, Info, LogOut, Database } from 'lucide-react';
+import { Target, X, BarChart3, History, RefreshCcw, Wifi, WifiOff, Loader2, Settings, Key, Save, CheckCircle2, Send, Trophy, Skull, Brain, Cpu, Zap, Activity, Hash, ShieldAlert, Terminal, Info, LogOut, Database, LayoutDashboard } from 'lucide-react';
 import { useAuth } from './components/FirebaseProvider';
 import { LoginPage } from './components/LoginPage';
 import { KeyManager } from './components/KeyManager';
+import { AdminPanel } from './components/AdminPanel';
 
 const STRATEGY_INFO: Record<string, string> = {
   'Neural Synergy v6': 'The Ultimate Orchestrator. Synergistically combines deep Markov chains, Poisson frequency, and pattern matched voting weighted by historical accuracy over 50 rounds.',
@@ -73,7 +74,15 @@ export default function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showKeyManager, setShowKeyManager] = useState(false);
+  const [showAdminDashboard, setShowAdminDashboard] = useState(isAdmin);
   const [autoRefresh, setAutoRefresh] = useState(true);
+
+  // Initialize Admin Panel if logged in as admin
+  useEffect(() => {
+    if (isAuthenticated && isAdmin) {
+      setShowAdminDashboard(true);
+    }
+  }, [isAuthenticated, isAdmin]);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [predictionLogs, setPredictionLogs] = useState<PredictionLog[]>([]);
@@ -217,6 +226,7 @@ export default function App() {
     <div className="relative w-full h-screen bg-obsidian-gradient overflow-hidden font-sans select-none bg-neural-mesh">
       <AnimatePresence>
         {showKeyManager && <KeyManager onClose={() => setShowKeyManager(false)} />}
+        {showAdminDashboard && <AdminPanel onClose={() => setShowAdminDashboard(false)} />}
       </AnimatePresence>
       {/* Target WebView Iframe */}
       <iframe 
@@ -503,6 +513,14 @@ export default function App() {
                       </button>
 
                       <div className={`grid ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => setShowAdminDashboard(true)}
+                            className="h-16 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-600 hover:text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 group col-span-2 mb-2"
+                          >
+                            <LayoutDashboard className="w-4 h-4 group-hover:rotate-6 transition-transform" /> Enter_Admin_Console
+                          </button>
+                        )}
                         {isAdmin && (
                           <button 
                             onClick={() => setShowKeyManager(true)}

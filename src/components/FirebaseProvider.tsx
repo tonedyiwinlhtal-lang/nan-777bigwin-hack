@@ -49,8 +49,14 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       // Master Admin Bypass
       if (normalizedKey === 'MGTHANT') {
-        if (!auth.currentUser) {
-          await signInAnonymously(auth);
+        try {
+          if (!auth.currentUser) {
+            await signInAnonymously(auth);
+          }
+        } catch (e: any) {
+          console.error('Bypass auth attempt failed:', e);
+          // If it's the restricted operation error, we proceed so the user can at least see the dashboard
+          // but we'll still have issues with Firestore operations until they fix it in the console.
         }
         localStorage.setItem('cortex_authorized', 'true');
         localStorage.setItem('cortex_admin_session', 'true');
@@ -91,7 +97,13 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return { success: true };
     } catch (err: any) {
       console.error('Key verification error:', err);
-      return { success: false, error: err.message };
+      
+      let friendlyError = err.message;
+      if (err.code === 'auth/admin-restricted-operation') {
+        friendlyError = 'FIREBASE_ERROR: Please enable "Anonymous Sign-in" in your Firebase Console (Authentication > Sign-in method).';
+      }
+      
+      return { success: false, error: friendlyError };
     } finally {
       setIsVerifying(false);
     }
