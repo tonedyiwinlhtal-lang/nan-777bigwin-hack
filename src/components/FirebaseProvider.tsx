@@ -8,6 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isVerifying: boolean;
+  sessionKey: string | null;
   verifyKey: (key: string) => Promise<{ success: boolean; error?: string; isAdmin?: boolean }>;
   logout: () => Promise<void>;
   loading: boolean;
@@ -21,6 +22,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [sessionKey, setSessionKey] = useState<string | null>(localStorage.getItem('cortex_session_key'));
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -29,11 +31,15 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (currentUser) {
         const isAuthorized = localStorage.getItem('cortex_authorized') === 'true';
         const isAdminSession = localStorage.getItem('cortex_admin_session') === 'true';
+        const sKey = localStorage.getItem('cortex_session_key');
+        
         setIsAuthenticated(isAuthorized);
         setIsAdmin(isAuthorized && isAdminSession);
+        setSessionKey(sKey);
       } else {
         setIsAuthenticated(false);
         setIsAdmin(false);
+        setSessionKey(null);
       }
       
       setLoading(false);
@@ -41,6 +47,39 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     return () => unsubscribe();
   }, []);
+
+  // Continuous Session Monitoring
+  useEffect(() => {
+    if (!isAuthenticated || isAdmin || !sessionKey) return;
+
+    const monitorInterval = setInterval(async () => {
+      try {
+        const keyRef = doc(db, 'keys', sessionKey);
+        const keySnap = await getDoc(keyRef);
+
+        if (!keySnap.exists()) {
+          console.warn('Session key revoked by admin. Terminating...');
+          localStorage.setItem('cortex_logout_reason', 'Access key has been revoked by administration.');
+          logout();
+          return;
+        }
+
+        const data = keySnap.data();
+        if (data.expiresAt) {
+          const expirationDate = data.expiresAt.toDate();
+          if (new Date() > expirationDate) {
+            console.warn('Session expired. Terminating...');
+            localStorage.setItem('cortex_logout_reason', 'Temporal session has reached expiration.');
+            logout();
+          }
+        }
+      } catch (err) {
+        console.error('Session monitor error:', err);
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(monitorInterval);
+  }, [isAuthenticated, isAdmin, sessionKey]);
 
   const verifyKey = async (key: string) => {
     setIsVerifying(true);
@@ -60,8 +99,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
         localStorage.setItem('cortex_authorized', 'true');
         localStorage.setItem('cortex_admin_session', 'true');
+        localStorage.setItem('cortex_session_key', normalizedKey);
         setIsAuthenticated(true);
         setIsAdmin(true);
+        setSessionKey(normalizedKey);
         return { success: true, isAdmin: true };
       }
 
@@ -92,7 +133,9 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       // 4. Set local authorization
       localStorage.setItem('cortex_authorized', 'true');
+      localStorage.setItem('cortex_session_key', normalizedKey);
       setIsAuthenticated(true);
+      setSessionKey(normalizedKey);
 
       return { success: true };
     } catch (err: any) {
@@ -113,12 +156,14 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await auth.signOut();
     localStorage.removeItem('cortex_authorized');
     localStorage.removeItem('cortex_admin_session');
+    localStorage.removeItem('cortex_session_key');
     setIsAuthenticated(false);
     setIsAdmin(false);
+    setSessionKey(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, isVerifying, verifyKey, logout, loading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, isVerifying, sessionKey, verifyKey, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
