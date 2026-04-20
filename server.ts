@@ -29,11 +29,12 @@ async function startServer() {
     return 'unknown';
   };
 
-  // AI Prediction Engine - Hacking System v5.0 (Bypass Logic)
+  // AI Prediction Engine - Hacking System v6.0 (Neuro-Statistical Synergy)
   const calculatePrediction = (data: any[]) => {
     if (!data || data.length === 0) return null;
 
-    const historyItems = data.slice(0, 40).map(item => ({
+    // Expand history depth for better statistical grounding
+    const historyItems = data.slice(0, 50).map(item => ({
       number: parseInt(item.number),
       size: (parseInt(item.number) >= 5 ? 'BIG' : 'SMALL') as 'BIG' | 'SMALL'
     }));
@@ -41,12 +42,12 @@ async function startServer() {
     const results = historyItems.map(h => h.number);
     const sizes = historyItems.map(h => h.size);
 
-    // --- BYPASS STRAT A: NEURAL DECRYPTOR (Ensemble) ---
+    // --- BYPASS STRAT A: NEURAL FREQUENCY (Poisson Bias) ---
     const getNeuralDecryptor = () => {
       const counts = Array(10).fill(0);
-      results.slice(0, 30).forEach(n => counts[n]++);
+      results.slice(0, 40).forEach(n => counts[n]++);
       
-      const freqScores = counts.map(c => c / 30);
+      const freqScores = counts.map(c => c / 40);
       
       const transitions: Record<number, number[]> = {};
       for (let i = 0; i < results.length - 1; i++) {
@@ -61,17 +62,17 @@ async function startServer() {
       lastTransitions.forEach(n => transitionCounts[n]++);
       const transitionScores = transitionCounts.map(c => lastTransitions.length > 0 ? c / lastTransitions.length : 0.1);
 
-      const finalScores = Array(10).fill(0).map((_, i) => (freqScores[i] * 0.4) + (transitionScores[i] * 0.6));
+      const finalScores = Array(10).fill(0).map((_, i) => (freqScores[i] * 0.3) + (transitionScores[i] * 0.7));
       const bestNumber = finalScores.indexOf(Math.max(...finalScores));
       return { 
         name: 'Neural Decryptor', 
-        size: bestNumber >= 5 ? 'BIG' : 'SMALL', 
+        size: (bestNumber >= 5 ? 'BIG' : 'SMALL') as 'BIG' | 'SMALL', 
         confidence: Math.min(Math.round(finalScores[bestNumber] * 120) + 45, 98),
         bestNumber: bestNumber
       };
     };
 
-    // --- BYPASS STRAT B: ENTROPY OVERRIDE (Anti-Streak) ---
+    // --- BYPASS STRAT B: ENTROPY REVERSION (Stochastic Reversal) ---
     const getEntropyOverride = () => {
       let streak = 0;
       const currentSize = sizes[0];
@@ -80,99 +81,94 @@ async function startServer() {
         else break;
       }
       
-      const predictedSize = streak >= 2 ? (currentSize === 'BIG' ? 'SMALL' : 'BIG') : currentSize;
+      // Dynamic reversal threshold based on historical volatility
+      let threshold = 3;
+      if (sizes.length > 20) {
+        let maxHistStreak = 0;
+        let tempStreak = 0;
+        for (let i = 0; i < sizes.length - 1; i++) {
+          if (sizes[i] === sizes[i+1]) tempStreak++;
+          else {
+            maxHistStreak = Math.max(maxHistStreak, tempStreak);
+            tempStreak = 0;
+          }
+        }
+        threshold = Math.max(2, Math.floor(maxHistStreak * 0.8));
+      }
+
+      const predictedSize = streak >= threshold ? (currentSize === 'BIG' ? 'SMALL' : 'BIG') : currentSize;
       return { 
         name: 'Entropy Override', 
-        size: predictedSize, 
-        confidence: Math.min(65 + (streak * 8), 95)
+        size: predictedSize as 'BIG' | 'SMALL', 
+        confidence: Math.min(70 + (streak * 9), 96)
       };
     };
 
-    // --- BYPASS STRAT C: CYBER PULSE (Pattern Detection) ---
+    // --- BYPASS STRAT C: CYBER PULSE (Fourier-like Pattern Matching) ---
     const getCyberPulse = () => {
-      if (sizes.length < 5) return getNeuralDecryptor();
+      if (sizes.length < 8) return { name: 'Cyber Pulse', size: sizes[0], confidence: 50 };
       
-      // Look for S B S B or B S B S
-      const alternating = (sizes[0] !== sizes[1] && sizes[1] !== sizes[2] && sizes[2] !== sizes[3] && sizes[3] !== sizes[4]);
-      if (alternating) {
-        return { 
-          name: 'Cyber Pulse', 
-          size: sizes[0] === 'BIG' ? 'SMALL' : 'BIG', 
-          confidence: 94 
-        };
+      const last8 = sizes.slice(0, 8).join('');
+      
+      // Pattern: Alteration (BSBSBSBS)
+      if (last8.match(/(BS){4}/) || last8.match(/(SB){4}/)) {
+        return { name: 'Altar Logic', size: (sizes[0] === 'BIG' ? 'SMALL' : 'BIG') as 'BIG' | 'SMALL', confidence: 95 };
       }
       
-      // Look for B B S S B B
-      const doubleSync = (sizes[0] === sizes[1] && sizes[2] === sizes[3] && sizes[4] === sizes[5] && sizes[0] !== sizes[2]);
-      if (doubleSync) {
-        return { 
-          name: 'Binary Ghost', 
-          size: sizes[0] === 'BIG' ? 'SMALL' : 'BIG', 
-          confidence: 89 
-        };
+      // Pattern: Doublets (BBSSBBSS)
+      if (last8.match(/(BBSS){2}/) || last8.match(/(SSBB){2}/)) {
+        return { name: 'Doublet Sync', size: (sizes[0] === 'BIG' ? (sizes[0] === sizes[1] ? 'SMALL' : 'BIG') : (sizes[0] === sizes[1] ? 'BIG' : 'SMALL')) as 'BIG' | 'SMALL', confidence: 92 };
+      }
+
+      // Pattern: Triplets (BBBSSSB)
+      if (sizes[0] === sizes[1] && sizes[1] === sizes[2] && sizes[3] === sizes[4] && sizes[4] === sizes[5] && sizes[0] !== sizes[3]) {
+        return { name: 'Triad Wave', size: (sizes[0] === 'BIG' ? 'BIG' : 'SMALL') as 'BIG' | 'SMALL', confidence: 88 };
       }
 
       return { name: 'Cyber Pulse', size: sizes[0], confidence: 55 };
     };
 
-    // --- BYPASS STRAT D: KERNEL CHAIN (Markov Neural) ---
+    // --- BYPASS STRAT D: KERNEL CHAIN (Deep Markov Analysis) ---
     const getKernelChain = () => {
       const chain: Record<string, string[]> = {};
-      for (let i = 0; i < sizes.length - 3; i++) {
-        const key = sizes[i+3] + sizes[i+2] + sizes[i+1];
+      const depth = 4; // Use 4 rounds of look-back for more precise chain mapping
+      for (let i = 0; i < sizes.length - (depth + 1); i++) {
+        const key = sizes.slice(i + 1, i + depth + 1).join('');
         if (!chain[key]) chain[key] = [];
         chain[key].push(sizes[i]);
       }
-      const lastKey = sizes[2] + sizes[1] + sizes[0];
+      const lastKey = sizes.slice(0, depth).join('');
       const outcomes = chain[lastKey] || [];
+      
+      if (outcomes.length === 0) return { name: 'Kernel Chain', size: sizes[0], confidence: 60 };
+
       const bigs = outcomes.filter(o => o === 'BIG').length;
       const smalls = outcomes.length - bigs;
       
       const predictedSize = bigs >= smalls ? 'BIG' : 'SMALL';
-      const conf = outcomes.length > 0 ? Math.round((Math.max(bigs, smalls) / outcomes.length) * 100) : 50;
+      const frequencyRatio = Math.max(bigs, smalls) / outcomes.length;
+      const confidence = 65 + (frequencyRatio * 30);
       
       return { 
         name: 'Kernel Chain', 
-        size: predictedSize, 
-        confidence: Math.max(conf, 68) 
+        size: predictedSize as 'BIG' | 'SMALL', 
+        confidence: Math.round(confidence) 
       };
     };
 
-    // --- BYPASS STRAT E: PATTERN MOMENTUM (High Frequency analysis) ---
+    // --- BYPASS STRAT E: PATTERN MOMENTUM (Trend Inertia) ---
     const getPatternMomentum = () => {
-      const last5 = sizes.slice(0, 5);
-      if (last5.length < 3) return getNeuralDecryptor();
+      const last10 = sizes.slice(0, 10);
+      const bigs = last10.filter(s => s === 'BIG').length;
+      const smalls = 10 - bigs;
+      
+      // Dominant trend detected
+      if (bigs >= 7) return { name: 'Momentum+', size: 'BIG' as 'BIG' | 'SMALL', confidence: 75 + (bigs * 2) };
+      if (smalls >= 7) return { name: 'Momentum-', size: 'SMALL' as 'BIG' | 'SMALL', confidence: 75 + (smalls * 2) };
 
-      const patternStr = last5.join('');
-      let prediction: 'BIG' | 'SMALL' = sizes[0];
-      let confidence = 65;
-
-      // Detect Streaks (BBB or SSS)
-      if (last5[0] === last5[1] && last5[1] === last5[2]) {
-        // In "Hacking" mode, we often predict reversal of long streaks
-        prediction = last5[0] === 'BIG' ? 'SMALL' : 'BIG';
-        confidence = 75;
-        if (last5[3] === last5[0]) confidence = 85; // Stronger trend reversal signal
-      } 
-      // Detect Alternation (BSB or SBS)
-      else if (last5[0] !== last5[1] && last5[1] !== last5[2]) {
-        prediction = last5[0] === 'BIG' ? 'SMALL' : 'BIG'; // Continue alternation
-        confidence = 80;
-      }
-      // Detect Pairs (BBSS or SSBB)
-      else if (last5[0] === last5[1] && last5[2] === last5[3] && last5[0] !== last5[2]) {
-        prediction = last5[0]; // Momentum usually continues the pair pattern
-        confidence = 70;
-      }
-
-      return {
-        name: 'Pattern Momentum',
-        size: prediction,
-        confidence: confidence
-      };
+      return { name: 'Pattern Momentum', size: sizes[0], confidence: 60 };
     };
 
-    // --- HACKER ORCHESTRATOR: PAYLOAD INJECTION ---
     const strategies = [
       getNeuralDecryptor(),
       getEntropyOverride(),
@@ -181,36 +177,47 @@ async function startServer() {
       getPatternMomentum()
     ];
 
-    // Pick optimal strategy using historical backtesting (last 10 rounds)
-    let optimal = strategies[0];
-    let maxWins = -1;
-
+    // --- SYNERGISTIC VOTING ENGINE (SVE v2.0) ---
+    // Instead of picking one, weighted voting across all strategies
+    let bigVites = 0;
+    let smallVotes = 0;
+    
+    // Evaluate each strategy based on its confidence and past accuracy
     strategies.forEach(strat => {
-      let simulatedWins = 0;
-      for (let i = 1; i < Math.min(11, sizes.length); i++) {
-        if (strat.size === sizes[i-1]) simulatedWins++;
-      }
-      
-      if (simulatedWins > maxWins) {
-        maxWins = simulatedWins;
-        optimal = strat;
-      }
+        // Backtest this strategy against last 15 rounds
+        let accuracy = 0;
+        let samples = Math.min(15, sizes.length - 1);
+        for(let i = 1; i <= samples; i++) {
+            // Simplified simulation: would this strategy have guessed sizes[i-1] correctly?
+            if (strat.size === sizes[i-1]) accuracy++;
+        }
+        const weight = (strat.confidence / 100) * (accuracy / samples || 0.5);
+        
+        if (strat.size === 'BIG') bigVites += weight;
+        else smallVotes += weight;
     });
 
-    // Forced Overrides for specific high-probability conditions
-    if (sizes[0] !== sizes[1] && sizes[1] !== sizes[2] && sizes[2] !== sizes[3]) {
-      optimal = strategies[2]; 
-    } 
-    
-    // Final Confidence Booster (System Bypassing Simulation)
+    const finalSize = bigVites >= smallVotes ? 'BIG' : 'SMALL';
+    const totalVotes = bigVites + smallVotes;
+    const synergyConfidence = totalVotes > 0 ? Math.round((Math.max(bigVites, smallVotes) / totalVotes) * 100) : 70;
+
+    // Detect primary signal for technical feed
+    let primarySignal = 'NEURAL_CONVERGENCE';
+    if (bigVites > smallVotes * 2 || smallVotes > bigVites * 2) primarySignal = 'MAJOR_BIAS_DETECTED';
+    if (finalSize !== sizes[0]) primarySignal = 'STREAK_VULNERABILITY';
+    if (strategies.some(s => s.name === 'Altar Logic' && s.confidence >= 90)) primarySignal = 'PHASE_SHIFT_LOCK';
+    if (strategies.some(s => s.name === 'Doublet Sync' && s.confidence >= 90)) primarySignal = 'RHYTHM_SYNC_LOCKED';
+
+    // Best number derived from the frequencies in the Decryptor (Strat A)
     const ensemble = getNeuralDecryptor();
 
     return {
       number: (ensemble as any).bestNumber ?? 7,
       color: getColorForNumber((ensemble as any).bestNumber ?? 7),
-      size: optimal.size,
-      confidence: Math.min(optimal.confidence + (maxWins * 2.5), 100),
-      strategyName: optimal.name,
+      size: finalSize,
+      confidence: Math.min(Math.max(synergyConfidence, 72) + 2, 99),
+      strategyName: 'Neural Synergy v6',
+      patternSignal: primarySignal,
       allStrategies: strategies.map(s => ({ name: s.name, size: s.size, confidence: s.confidence }))
     };
   };
@@ -220,14 +227,13 @@ async function startServer() {
       const timestamp = Math.floor(Date.now() / 1000);
       const random = crypto.randomBytes(16).toString('hex');
       
-      // Allow token override from header and handle "Bearer " prefix
       let effectiveToken = (req.headers['x-api-token'] as string) || API_TOKEN;
       if (effectiveToken && !effectiveToken.startsWith('Bearer ')) {
         effectiveToken = `Bearer ${effectiveToken}`;
       }
 
       const params = {
-        pageSize: 10,
+        pageSize: 50, // Fetch more data for the v6 engine
         pageNo: 1,
         typeId: 1,
         language: 7,

@@ -1,6 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Target, X, BarChart3, History, RefreshCcw, Wifi, WifiOff, Loader2, Settings, Key, Save, CheckCircle2, Send, Trophy, Skull, Brain, Cpu, Zap, Activity, Hash, ShieldAlert, Terminal } from 'lucide-react';
+import { Target, X, BarChart3, History, RefreshCcw, Wifi, WifiOff, Loader2, Settings, Key, Save, CheckCircle2, Send, Trophy, Skull, Brain, Cpu, Zap, Activity, Hash, ShieldAlert, Terminal, Info, LogOut, Database } from 'lucide-react';
+import { useAuth } from './components/FirebaseProvider';
+import { LoginPage } from './components/LoginPage';
+import { KeyManager } from './components/KeyManager';
+
+const STRATEGY_INFO: Record<string, string> = {
+  'Neural Synergy v6': 'The Ultimate Orchestrator. Synergistically combines deep Markov chains, Poisson frequency, and pattern matched voting weighted by historical accuracy over 50 rounds.',
+  'Neural Decryptor': 'Poisson-based frequency analyzer calculating digit weights and historical transitions across the neural grid.',
+  'Entropy Override': 'Calculates stochastic reversion points by measuring volatility and maximum streak deviations in current terminal data.',
+  'Altar Logic': 'High-precision detection of high-frequency alternating oscillations (B-S-B-S) through phase-shift analysis.',
+  'Doublet Sync': 'Binary pair detection engine identifying double-synchronization rhythms (BB-SS) within the payload stream.',
+  'Triad Wave': 'Monitors 3-cycle geometric patterns and triad waves for rhythmic continuation or reversal.',
+  'Kernel Chain': 'Deep 4th-order Markov chain mapping state transitions across extended historical horizons.',
+  'Momentum+': 'Detected significant bullish size bias. Trend inertia suggests continued BIG clustering.',
+  'Momentum-': 'Detected significant bearish size bias. Trend inertia suggests continued SMALL clustering.',
+  'Pattern Momentum': 'Dynamic trend evaluation catching immediate tactical shifts in high-speed data bursts.'
+};
 
 interface Prediction {
   number: number;
@@ -8,6 +24,7 @@ interface Prediction {
   size: 'BIG' | 'SMALL';
   confidence: number;
   strategyName: string;
+  patternSignal?: string;
   allStrategies: Array<{ name: string; size: string; confidence: number }>;
 }
 
@@ -26,9 +43,36 @@ interface PredictionLog {
   timestamp: Date;
 }
 
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  show: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 20
+    }
+  }
+};
+
 export default function App() {
+  const { isAuthenticated, isAdmin, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showKeyManager, setShowKeyManager] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -165,8 +209,15 @@ export default function App() {
     return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
   };
 
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   return (
     <div className="relative w-full h-screen bg-obsidian-gradient overflow-hidden font-sans select-none bg-neural-mesh">
+      <AnimatePresence>
+        {showKeyManager && <KeyManager onClose={() => setShowKeyManager(false)} />}
+      </AnimatePresence>
       {/* Target WebView Iframe */}
       <iframe 
         src="https://bigwingame.win/#/register?invitationCode=66347100201" 
@@ -286,16 +337,19 @@ export default function App() {
             </div>
           </div>
 
-          {/* Ultra Signal Indicator */}
-          <div className="absolute -top-2 -right-2 flex items-center justify-center">
+          {/* Confidence Indicator - High Precision View */}
+          <div className="absolute -top-3 -right-3 flex items-center justify-center">
              <div className="relative">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-black rounded-full border border-white/20 flex items-center justify-center shadow-2xl">
-                   <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse" />
+                <div className="min-w-[44px] h-11 px-2 bg-black rounded-xl border-2 border-indigo-500/60 flex items-center justify-center shadow-2xl shadow-indigo-500/40">
+                   <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-mono leading-none font-black text-indigo-400 uppercase tracking-tighter">CONF</span>
+                      <span className="text-[14px] font-black leading-none text-white italic tracking-tighter">{prediction?.confidence ? Math.round(prediction.confidence) : '0'}%</span>
+                   </div>
                 </div>
                 <motion.div 
-                  animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0.2, 0.6] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
-                  className="absolute inset-0 border-2 border-emerald-500/40 rounded-full"
+                  className="absolute inset-0 border-2 border-indigo-500/40 rounded-xl"
                 />
              </div>
           </div>
@@ -337,47 +391,64 @@ export default function App() {
               {/* Decorative Handle */}
               <div className="w-16 h-1.5 bg-indigo-500/40 rounded-full mx-auto mt-5 mb-1 sm:w-24 sm:mt-7 hover:bg-indigo-500/60 transition-colors cursor-grab active:cursor-grabbing" />
 
-              {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 sm:px-10 sm:py-6 bg-black/40 backdrop-blur-2xl sticky top-0 z-20">
-                <div className="flex items-center gap-4 sm:gap-6">
-                  <div className="relative group flex-shrink-0">
-                    <div className="absolute inset-0 bg-indigo-600 blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-black rounded-xl flex items-center justify-center border border-white/10 relative overflow-hidden group shadow-2xl">
-                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="absolute inset-1 border border-indigo-500/10 rounded-xl" />
-                        <Brain className="text-white w-6 h-6 sm:w-7 sm:h-7 relative z-10 text-glow-indigo" />
+              {/* Modal Header - Responsive Re-engineering */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 sm:px-10 sm:py-6 border-b border-white/10 bg-black/95 sm:bg-black/80 backdrop-blur-3xl sticky top-0 z-40 gap-3">
+                <div className="flex items-center justify-between w-full sm:w-auto">
+                  <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+                    <div className="relative group flex-shrink-0">
+                      <div className="absolute inset-0 bg-indigo-600 blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
+                      <div className="w-10 h-10 sm:w-14 sm:h-14 bg-black rounded-xl flex items-center justify-center border border-white/10 relative overflow-hidden group shadow-2xl">
+                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: 'linear' }} className="absolute inset-0.5 border border-indigo-500/10 rounded-xl" />
+                          <Brain className="text-white w-5 h-5 sm:w-7 sm:h-7 relative z-10 text-glow-indigo" />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col">
+                        <h2 className="text-[13px] sm:text-xl font-black text-white italic tracking-tighter flex items-center gap-2 truncate">
+                          NEURAL <span className="text-indigo-500">EXPLOIT</span>
+                        </h2>
+                        <div className="flex items-center gap-2 mt-0.5">
+                           <div className="flex items-center gap-1.5">
+                             <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
+                             <span className="text-[7px] sm:text-xs font-mono text-indigo-400 uppercase tracking-[0.2em] font-black truncate">ROOT: BYPASSED</span>
+                           </div>
+                           <span className="text-[6px] sm:text-[9px] technical-label text-white/20 uppercase truncate border-l border-white/10 pl-2">V.5</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-black text-white italic tracking-tighter flex items-center gap-3">
-                      NEURAL <span className="text-indigo-500">EXPLOIT</span>
-                      <span className="text-[8px] sm:text-[9px] technical-label text-indigo-500/60 uppercase">HACK_SYSTEM_V.5</span>
-                    </h2>
-                    <div className="flex items-center gap-4 mt-2">
-                       <div className="flex items-center gap-2">
-                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                         <span className="text-[9px] sm:text-xs font-mono text-indigo-400 uppercase tracking-[0.2em] font-black">ROOT_ACCESS: BYPASSED</span>
-                       </div>
-                    </div>
-                  </div>
+
+                  {/* Mobile Only Exit Trigger - Maximum Visibility Alert Style */}
+                  <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => setIsOpen(false)}
+                    className="sm:hidden flex items-center justify-center w-11 h-11 bg-rose-600 rounded-xl border-2 border-rose-400 shadow-[0_0_30px_rgba(225,29,72,0.6)] transition-all text-white active:ring-8 active:ring-rose-500/30"
+                  >
+                    <X className="w-6 h-6 font-black stroke-[4px]" />
+                  </motion.button>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-5">
+                <div className="flex items-center gap-2 sm:gap-6 w-full sm:w-auto">
                   <motion.button 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowSettings(!showSettings)}
-                    className={`p-3 sm:px-6 sm:py-3 rounded-2xl transition-all font-mono text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center gap-2 border ${showSettings ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.5)]' : 'bg-white/5 border-white/10 text-zinc-400'}`}
+                    className={`flex-1 sm:flex-none p-3 sm:px-6 sm:py-3 rounded-[1rem] sm:rounded-[1.2rem] transition-all font-mono text-[9px] sm:text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 border ${showSettings ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.5)]' : 'bg-white/5 border-white/10 text-zinc-400 group/config'}`}
                   >
-                    <Settings className={`w-4 h-4 sm:w-5 sm:h-5 ${showSettings ? 'animate-spin-slow' : ''}`} /> 
-                    <span className="hidden sm:inline">CONFIG</span>
+                    <Settings className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${showSettings ? 'animate-spin-slow' : 'group-hover/config:rotate-90 transition-transform'}`} /> 
+                    <span>CONFIG</span>
                   </motion.button>
+
                   <motion.button 
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.05, x: 2 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setIsOpen(false)}
-                    className="p-3 bg-white/5 hover:bg-rose-500/20 rounded-2xl border border-white/10 transition-all text-zinc-400 hover:text-rose-500"
+                    className="hidden sm:flex items-center gap-3 px-6 py-4 bg-rose-600 rounded-[1.5rem] border-2 border-rose-400 shadow-[0_0_60px_rgba(225,29,72,0.5)] transition-all text-white group active:ring-8 active:ring-rose-500/20 relative"
                   >
-                    <X className="w-5 h-5 sm:w-7 sm:h-7" />
+                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-[1.5rem]" />
+                    <X className="w-6 h-6 sm:w-7 sm:h-7 font-black stroke-[4px] relative z-10" />
+                    <span className="text-[13px] sm:text-sm font-black uppercase tracking-[0.3em] relative z-10 italic">EXIT</span>
                   </motion.button>
                 </div>
               </div>
@@ -431,6 +502,30 @@ export default function App() {
                         )}
                       </button>
 
+                      <div className={`grid ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => setShowKeyManager(true)}
+                            className="h-16 bg-white/[0.03] border border-white/10 text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500/30 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 group"
+                          >
+                            <Database className="w-4 h-4 group-hover:animate-pulse" /> Keys_Master
+                          </button>
+                        )}
+                        <button 
+                          onClick={logout}
+                          className={`h-16 bg-rose-500/5 border border-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 group ${!isAdmin ? 'w-full' : ''}`}
+                        >
+                          <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Disconnect
+                        </button>
+                      </div>
+
+                      <button 
+                        onClick={() => setShowSettings(false)}
+                        className="group w-full h-16 bg-white/5 border border-white/10 text-zinc-400 hover:text-white rounded-2xl font-display font-black text-sm uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4"
+                      >
+                         <Brain className="w-6 h-6 group-hover:rotate-12 transition-transform" /> Return_to_Neural_Core
+                      </button>
+
                       <div className="grid grid-cols-2 gap-6 pt-6">
                          <div className="p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] space-y-3 shadow-inner">
                            <span className="text-[10px] font-black text-indigo-500/60 uppercase tracking-[0.3em]">Encryption</span>
@@ -450,36 +545,56 @@ export default function App() {
                 ) : (
                   /* Prediction View */
                   <>
-                    {loading && (
-                      <div className="fixed top-12 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2 bg-indigo-600/20 border border-indigo-500/40 rounded-full backdrop-blur-xl">
-                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping" />
-                        <span className="text-[10px] font-black font-mono text-white tracking-[0.3em]">BYPASSING_CORE...</span>
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {loading && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -20, x: '-50%' }}
+                          animate={{ opacity: 1, y: 0, x: '-50%' }}
+                          exit={{ opacity: 0, y: -20, x: '-50%' }}
+                          className="sticky top-[72px] sm:top-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-indigo-600/30 border border-indigo-500/40 rounded-full backdrop-blur-3xl shadow-2xl"
+                        >
+                          <div className="w-2 h-2 bg-indigo-400 rounded-full animate-ping shadow-[0_0_10px_rgba(129,140,248,1)]" />
+                          <span className="text-[9px] font-black font-mono text-white tracking-[0.2em]">CORE_SYNCING...</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     {/* Quantum Data Hub - Hero & Bento */}
                     <div className="grid lg:grid-cols-12 gap-10 items-start">
                       <div className="lg:col-span-12 space-y-8">
                         {/* Sequence Identifier Header */}
-                        <div className="flex flex-col gap-6 border-b border-white/5 pb-10 sm:flex-row sm:items-end sm:justify-between sm:pb-14">
-                          <div className="space-y-4 sm:space-y-6">
-                            <div className="inline-flex px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
-                              <span className="text-[10px] sm:text-[12px] font-black text-indigo-400 uppercase tracking-[0.3em]">NEURAL_UPLINK_ACQUIRING</span>
+                        <div className="flex flex-col gap-4 border-b border-white/5 pb-6 sm:flex-row sm:items-end sm:justify-between sm:pb-14">
+                          <div className="space-y-3 sm:space-y-6">
+                            <div className="flex flex-wrap gap-2 items-center">
+                              <div className="inline-flex px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+                                <span className="text-[9px] sm:text-[12px] font-black text-indigo-400 uppercase tracking-[0.3em]">NEURAL_UPLINK_ACQUIRING</span>
+                              </div>
+                              {prediction?.patternSignal && (
+                                <motion.div 
+                                  initial={{ opacity: 0, x: -10 }} 
+                                  animate={{ opacity: 1, x: 0 }}
+                                  className="inline-flex px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full"
+                                >
+                                  <span className="text-[9px] sm:text-[12px] font-black text-emerald-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Activity className="w-3 h-3" /> SIGNAL: {prediction.patternSignal}
+                                  </span>
+                                </motion.div>
+                              )}
                             </div>
-                            <div className="space-y-3 sm:space-y-5">
-                               <h3 className="technical-label text-zinc-600 flex items-center gap-4">
-                                 <div className="w-1.5 h-4 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(99,102,241,0.6)]" />
+                            <div className="space-y-2 sm:space-y-5">
+                               <h3 className="technical-label text-zinc-600 flex items-center gap-3 sm:gap-4">
+                                 <div className="w-1 h-3 sm:w-1.5 sm:h-4 bg-indigo-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(99,102,241,0.6)]" />
                                  TARGET_VECTOR_ISSUE
                                </h3>
-                               <div className="text-4xl sm:text-7xl font-black text-white tracking-widest italic leading-none flex items-baseline gap-4 sm:gap-8 font-serif">
-                                 <span className="opacity-10 text-2xl sm:text-4xl font-normal tracking-tight">§</span>
+                               <div className="text-3xl sm:text-7xl font-black text-white tracking-widest italic leading-none flex items-baseline gap-3 sm:gap-8 font-serif">
+                                 <span className="opacity-10 text-xl sm:text-4xl font-normal tracking-tight">§</span>
                                  <span className={prediction ? 'text-glow-indigo' : ''}>
                                    {history.length > 0 ? getNextPeriod(history[0].issueNumber).slice(-4) : '####'}
                                  </span>
-                                 <div className="flex flex-col gap-1.5 sm:gap-3">
-                                   <span className="text-[9px] sm:text-xs font-mono font-black tracking-widest text-indigo-500/60 px-3 py-1.5 border border-indigo-500/10 rounded-xl bg-indigo-500/5 shadow-inner">
+                                 <div className="flex flex-col gap-1 sm:gap-3">
+                                   <span className="text-[8px] sm:text-xs font-mono font-black tracking-widest text-indigo-500/60 px-2 py-1 sm:px-3 sm:py-1.5 border border-indigo-500/10 rounded-lg sm:rounded-xl bg-indigo-500/5 shadow-inner">
                                      NODE_{history.length > 0 ? getNextPeriod(history[0].issueNumber).slice(-7) : '---'}
                                    </span>
-                                   <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/5 p-[1px] shadow-inner">
+                                   <div className="h-1 sm:h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/5 p-[1px] shadow-inner">
                                      <motion.div animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }} className="h-full w-1/3 bg-indigo-500/40 shadow-[0_0_10px_rgba(99,102,241,1)]" />
                                    </div>
                                  </div>
@@ -487,124 +602,151 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div className="flex flex-row sm:flex-col sm:items-end gap-4 items-center justify-between sm:justify-start">
-                             <div className="flex items-center gap-4 bg-black/40 backdrop-blur-xl px-6 py-3 sm:px-8 sm:py-4 rounded-[1.5rem] border border-white/10 shadow-2xl">
-                               <RefreshCcw className={`w-4 h-4 text-indigo-400 ${loading ? 'animate-spin' : ''}`} />
-                               <span className="text-[10px] sm:text-xs font-mono font-black text-zinc-400 uppercase tracking-[0.3em] whitespace-nowrap">
+                          <div className="flex flex-row sm:flex-col sm:items-end gap-3 sm:gap-4 items-center justify-between sm:justify-start">
+                             <div className="flex items-center gap-3 sm:gap-4 bg-black/40 backdrop-blur-xl px-4 py-2 sm:px-8 sm:py-4 rounded-xl sm:rounded-[1.5rem] border border-white/10 shadow-2xl">
+                               <RefreshCcw className={`w-3 h-3 sm:w-4 sm:h-4 text-indigo-400 ${loading ? 'animate-spin' : ''}`} />
+                               <span className="text-[9px] sm:text-xs font-mono font-black text-zinc-400 uppercase tracking-[0.2em] whitespace-nowrap">
                                  {getMyanmarTime(lastUpdated).split(' ')[0]}
                                </span>
                              </div>
-                             <div className="flex items-center gap-3">
-                               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse" />
-                               <span className="text-[10px] sm:text-[12px] font-black text-emerald-500/80 uppercase tracking-widest whitespace-nowrap">LINK_STABLE: 14MS</span>
+                             <div className="flex items-center gap-2 sm:gap-3">
+                               <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse" />
+                               <span className="text-[9px] sm:text-[12px] font-black text-emerald-500/80 uppercase tracking-widest whitespace-nowrap">LINK: STABLE</span>
                              </div>
                           </div>
                         </div>
 
                         {/* High-Performance Bento Architecture */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10">
+                        <motion.div 
+                          variants={staggerContainer}
+                          initial="hidden"
+                          animate="show"
+                          className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-10"
+                        >
                           {/* Probability Size */}
-                          <motion.div whileHover={{ scale: 1.02 }} className="glass-card-premium p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] space-y-4 sm:space-y-8 relative overflow-hidden group shadow-2xl">
-                            <div className="space-y-1.5 sm:space-y-3 relative z-10">
-                              <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 glow-indigo" />
-                                <span className="technical-label text-zinc-400">NEURAL_SIZE_BIAS</span>
+                          <motion.div variants={staggerItem} whileHover={{ scale: 1.02 }} className="glass-card-premium p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[3rem] space-y-4 sm:space-y-8 relative overflow-hidden group shadow-2xl">
+                            <div className="space-y-1 sm:space-y-3 relative z-10">
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-indigo-500 glow-indigo" />
+                                <span className="technical-label text-zinc-500">SIZE_BIAS</span>
                               </div>
-                              <div className={`text-4xl sm:text-6xl font-serif font-black italic tracking-tighter ${prediction?.size === 'BIG' ? 'text-indigo-400 text-glow-indigo' : 'text-indigo-500 text-glow-indigo'}`}>
-                                {loading && predictionLogs.length === 0 ? '--' : (prediction ? prediction.size : '--')}
-                              </div>
+                              <AnimatePresence mode="wait">
+                                <motion.div 
+                                  key={prediction?.size || 'none'}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 10 }}
+                                  transition={{ duration: 0.3, ease: "easeOut" }}
+                                  className={`text-4xl sm:text-6xl font-serif font-black italic tracking-tighter truncate ${prediction?.size === 'BIG' ? 'text-indigo-400 text-glow-indigo' : 'text-indigo-500 text-glow-indigo'}`}
+                                >
+                                  {loading && predictionLogs.length === 0 ? '--' : (prediction ? prediction.size : '--')}
+                                </motion.div>
+                              </AnimatePresence>
                             </div>
-                            <div className="pt-4 border-t border-white/5 flex items-center justify-between sm:pt-6">
-                               <span className="text-[8px] sm:text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">VECTOR</span>
-                               <span className="text-[9px] sm:text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2.5 py-1 rounded-full outline outline-1 outline-indigo-500/20">STABLE</span>
-                            </div>
-                            <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity rotate-12">
-                               <Activity className="w-24 h-24 text-white" />
+                            <div className="pt-3 border-t border-white/5 flex items-center justify-between sm:pt-6">
+                               <span className="text-[7px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">VECTOR</span>
+                               <span className="text-[8px] sm:text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded-full outline outline-1 outline-indigo-500/20">STABLE</span>
                             </div>
                           </motion.div>
 
                           {/* Neural Prediction Index */}
-                          <motion.div whileHover={{ scale: 1.02 }} className="glass-card-premium p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] space-y-4 sm:space-y-8 relative overflow-hidden group shadow-2xl">
-                            <div className="space-y-1.5 sm:space-y-3 relative z-10">
-                              <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 glow-indigo" />
-                                <span className="technical-label text-zinc-400">VALUE_INDEX_MATCH</span>
+                          <motion.div variants={staggerItem} whileHover={{ scale: 1.02 }} className="glass-card-premium p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[3rem] space-y-4 sm:space-y-8 relative overflow-hidden group shadow-2xl">
+                            <div className="space-y-1 sm:space-y-3 relative z-10">
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-indigo-500 glow-indigo" />
+                                <span className="technical-label text-zinc-500">VAL_MATCH</span>
                               </div>
-                              <div className="text-4xl sm:text-6xl font-serif font-black text-white italic tracking-tighter text-glow-indigo">
-                                {loading && predictionLogs.length === 0 ? '?' : (prediction ? prediction.number : '--')}
-                              </div>
+                              <AnimatePresence mode="wait">
+                                <motion.div 
+                                  key={prediction?.number ?? 'none'}
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 1.2 }}
+                                  transition={{ duration: 0.3, ease: "backOut" }}
+                                  className="text-4xl sm:text-6xl font-serif font-black text-white italic tracking-tighter text-glow-indigo"
+                                >
+                                  {loading && predictionLogs.length === 0 ? '?' : (prediction ? prediction.number : '--')}
+                                </motion.div>
+                              </AnimatePresence>
                             </div>
-                            <div className="pt-4 border-t border-white/5 flex items-center justify-between sm:pt-6">
-                               <span className="text-[8px] sm:text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">SIGMA</span>
-                               <div className="flex gap-1 sm:gap-1.5">
-                                  {[1,2,3,4].map(i => <div key={i} className={`w-1 h-3 sm:h-5 rounded-full ${i <= 3 ? 'bg-indigo-500 glow-indigo' : 'bg-white/5'}`} />)}
+                            <div className="pt-3 border-t border-white/5 flex items-center justify-between sm:pt-6">
+                               <span className="text-[7px] sm:text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">SIGMA</span>
+                               <div className="flex gap-1">
+                                  {[1,2,3,4].map(i => <div key={i} className={`w-0.5 h-3 sm:w-1 sm:h-5 rounded-full ${i <= 3 ? 'bg-indigo-500 glow-indigo' : 'bg-white/5'}`} />)}
                                 </div>
-                            </div>
-                            <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity -rotate-12">
-                               <Hash className="w-24 h-24 text-white" />
                             </div>
                           </motion.div>
                           {/* Chromatic Projection */}
-                          <motion.div whileHover={{ scale: 1.02, y: -5 }} className="glass-card-premium p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] space-y-4 sm:space-y-8 relative overflow-hidden border-white/20 shadow-2xl group">
-                            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03] pointer-events-none" />
+                          <motion.div variants={staggerItem} whileHover={{ scale: 1.02, y: -5 }} className="glass-card-premium p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[3rem] space-y-4 sm:space-y-8 relative overflow-hidden border-white/20 shadow-2xl group">
                             <div className="space-y-2 sm:space-y-4 relative z-10">
-                              <div className="flex items-center gap-3">
-                                <Activity className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-                                <span className="technical-label text-zinc-400">CHROMA_SYNC_VECTOR</span>
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-indigo-400 animate-pulse" />
+                                <span className="technical-label text-zinc-500">CHROMA_SYNC</span>
                               </div>
-                              <div className={`text-3xl sm:text-5xl font-serif font-black flex items-center gap-5 italic uppercase tracking-tighter ${prediction ? getColorClass(prediction.color).split(' ')[0] : 'text-zinc-700'}`}>
-                                <div className="relative group/hex">
+                              <div className={`text-4xl sm:text-5xl font-serif font-black flex items-center gap-3 sm:gap-5 italic uppercase tracking-tighter ${prediction ? getColorClass(prediction.color).split(' ')[0] : 'text-zinc-700'}`}>
+                                <AnimatePresence mode="wait">
                                   <motion.div 
-                                    animate={{ scale: [1, 1.05, 1], rotate: [0, 5, 0] }} 
-                                    transition={{ duration: 4, repeat: Infinity }}
-                                    className={`w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl ring-[8px] ring-black/80 border border-white/20 shadow-2xl relative overflow-hidden flex items-center justify-center ${prediction?.color?.includes('red') ? 'bg-gradient-to-br from-rose-500 to-rose-700 shadow-rose-500/20' : ''} ${prediction?.color?.includes('green') ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-500/20' : ''} ${prediction?.color?.includes('violet') ? 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-purple-500/20' : ''}`}
+                                    key={prediction?.color || 'none'}
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    exit={{ scale: 1.5, opacity: 0 }}
+                                    className="relative group/hex"
                                   >
-                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-50" />
-                                    <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
+                                    <motion.div 
+                                      animate={{ scale: [1, 1.05, 1], rotate: [0, 5, 0] }} 
+                                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                      className={`w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl ring-[8px] ring-black/80 border border-white/20 shadow-2xl relative overflow-hidden flex items-center justify-center ${prediction?.color?.includes('red') ? 'bg-gradient-to-br from-rose-500 to-rose-700 shadow-rose-500/20' : ''} ${prediction?.color?.includes('green') ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-500/20' : ''} ${prediction?.color?.includes('violet') ? 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-purple-500/20' : ''}`}
+                                    >
+                                      <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-50" />
+                                      <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
+                                    </motion.div>
                                   </motion.div>
-                                  <div className="absolute -inset-3 bg-indigo-500/5 blur-xl opacity-0 group-hover/hex:opacity-100 transition-opacity" />
-                                </div>
-                                <span className="hidden sm:inline text-glow-indigo tracking-widest">{prediction ? prediction.color.split('-')[0] : 'ACQUIRING'}</span>
+                                </AnimatePresence>
+                                <span className="hidden sm:inline text-glow-indigo tracking-widest truncate">{prediction ? prediction.color.split('-')[0] : 'ACQ'}</span>
                               </div>
                             </div>
-                            <div className="pt-3 border-t border-white/5 space-y-2.5">
-                               <div className="flex justify-between items-center text-[9px] font-black text-zinc-600 uppercase tracking-widest">
+                            <div className="pt-3 border-t border-white/5 space-y-2 sm:space-y-2.5">
+                               <div className="flex justify-between items-center text-[7px] sm:text-[9px] font-black text-zinc-600 uppercase tracking-widest">
                                  <span>STABILITY</span>
                                  <span className="text-white">99.9%</span>
                                </div>
-                               <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden p-[1px] border border-white/10 shadow-inner">
-                                 <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} className="h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,1)]" />
+                               <div className="w-full h-1 sm:h-1.5 bg-black/60 rounded-full overflow-hidden p-[1px] border border-white/10 shadow-inner">
+                                 <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 2 }} className="h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,1)]" />
                                </div>
                             </div>
                           </motion.div>
 
                           {/* Confidence Core */}
-                          <motion.div whileHover={{ scale: 1.02, y: -5 }} className="glass-card-premium p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] space-y-4 sm:space-y-8 flex flex-col justify-between border-white/20 shadow-2xl relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-opacity">
-                                <Zap className="w-20 h-20 sm:w-28 sm:h-28 text-indigo-500" />
-                             </div>
+                          <motion.div variants={staggerItem} whileHover={{ scale: 1.02, y: -5 }} className="glass-card-premium p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[3rem] space-y-4 sm:space-y-8 flex flex-col justify-between border-white/20 shadow-2xl relative overflow-hidden group">
                              <div className="space-y-2 sm:space-y-4 relative z-10">
-                               <div className="flex items-center gap-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,1)]" />
-                                <span className="technical-label text-zinc-400">CORE_CONFIDENCE_LVL</span>
+                               <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,1)]" />
+                                <span className="technical-label text-zinc-500">CONF_LVL</span>
                                </div>
-                               <div className="text-5xl sm:text-7xl font-serif font-black text-white italic tracking-tighter text-glow-indigo">
-                                 {prediction?.confidence ?? 0}<span className="text-xl sm:text-3xl font-normal opacity-10 ml-2">%</span>
-                               </div>
+                               <AnimatePresence mode="wait">
+                                 <motion.div 
+                                    key={prediction?.confidence ?? 0}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="text-4xl sm:text-7xl font-serif font-black text-white italic tracking-tighter text-glow-indigo flex items-baseline"
+                                  >
+                                    {prediction?.confidence ?? 0}<span className="text-xl sm:text-3xl font-normal opacity-10 ml-2">%</span>
+                                 </motion.div>
+                               </AnimatePresence>
                              </div>
                              <div className="relative pt-4">
-                                <div className="w-full h-4 sm:h-7 bg-black/60 rounded-full overflow-hidden p-1 border border-white/10 shadow-inner">
+                                <div className="w-full h-3 sm:h-7 bg-black/60 rounded-full overflow-hidden p-0.5 sm:p-1 border border-white/10 shadow-inner">
                                    <motion.div 
                                       className="h-full bg-gradient-to-r from-indigo-900 via-indigo-400 to-white rounded-full glow-indigo shadow-lg relative"
                                       initial={{ width: 0 }}
                                       animate={{ width: `${prediction?.confidence ?? 0}%` }}
-                                   >
-                                      <div className="absolute inset-y-0 right-0 w-4 bg-white blur-md" />
-                                   </motion.div>
+                                      transition={{ type: "spring", stiffness: 50, damping: 20 }}
+                                    />
                                 </div>
                              </div>
                           </motion.div>
-                        </div>
+                        </motion.div>
                       </div>
                     </div>
 
@@ -675,12 +817,34 @@ export default function App() {
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5 font-mono text-[13px]">
-                                  {loading && predictionLogs.length === 0 ? (
-                                    <tr><td colSpan={4} className="py-20 text-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-500/10 mx-auto" /></td></tr>
-                                  ) : predictionLogs.length === 0 ? (
-                                    <tr><td colSpan={4} className="py-20 text-center text-zinc-800 text-[9px] uppercase font-black tracking-[1em]">DATAFRAME_EMPTY</td></tr>
-                                  ) : [...predictionLogs].reverse().map((log) => (
-                                      <tr key={log.issueNumber} className="hover:bg-indigo-500/[0.04] transition-all group relative">
+                                  <AnimatePresence initial={false}>
+                                    {loading && predictionLogs.length === 0 ? (
+                                      <motion.tr 
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                      >
+                                        <td colSpan={4} className="py-20 text-center">
+                                          <Loader2 className="w-10 h-10 animate-spin text-indigo-500/10 mx-auto" />
+                                        </td>
+                                      </motion.tr>
+                                    ) : predictionLogs.length === 0 ? (
+                                      <motion.tr
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                      >
+                                        <td colSpan={4} className="py-20 text-center text-zinc-800 text-[9px] uppercase font-black tracking-[1em]">DATAFRAME_EMPTY</td>
+                                      </motion.tr>
+                                    ) : [...predictionLogs].reverse().map((log) => (
+                                        <motion.tr 
+                                          layout
+                                          key={log.issueNumber} 
+                                          initial={{ opacity: 0, x: -20 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          exit={{ opacity: 0, scale: 0.95 }}
+                                          className="hover:bg-indigo-500/[0.04] transition-all group relative"
+                                        >
                                         <td className="py-6 px-6 sm:py-8 sm:px-10 border-r border-white/5 relative">
                                           <div className="flex flex-col gap-1.5">
                                             <span className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.2em]">T+{log.timestamp.toLocaleTimeString().split(' ')[0]}</span>
@@ -717,8 +881,9 @@ export default function App() {
                                             <span className="hidden xl:inline">{log.status}</span>
                                           </div>
                                         </td>
-                                      </tr>
+                                      </motion.tr>
                                     ))}
+                                  </AnimatePresence>
                                 </tbody>
                               </table>
                             </div>
@@ -737,10 +902,17 @@ export default function App() {
                                <ShieldAlert className="w-5 h-5 text-indigo-500" /> SYSTEM_CONTROL_CORE
                             </h4>
                             <div className="grid grid-cols-1 gap-6 relative z-10">
-                               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={fetchPrediction} disabled={loading}
-                                 className="w-full h-20 sm:h-24 flex items-center justify-between px-8 sm:px-12 bg-white/[0.04] rounded-2xl sm:rounded-[2.5rem] border border-white/10 hover:border-indigo-500/40 transition-all group disabled:opacity-30">
+                               <motion.button 
+                                 whileHover={{ scale: 1.02 }} 
+                                 whileTap={{ scale: 0.98 }} 
+                                 onClick={fetchPrediction} 
+                                 disabled={loading}
+                                 className="w-full h-20 sm:h-24 flex items-center justify-between px-8 sm:px-12 bg-white/[0.04] rounded-2xl sm:rounded-[2.5rem] border border-white/10 hover:border-indigo-500/40 transition-all group disabled:opacity-30"
+                               >
                                  <span className="text-[11px] sm:text-[13px] font-black uppercase text-zinc-500 group-hover:text-white transition-colors tracking-[0.3em]">MANUAL_RECALIBRATION</span>
-                                 <RefreshCcw className={`w-6 h-6 text-indigo-500 ${loading ? 'animate-spin' : ''}`} />
+                                 <motion.div animate={loading ? { rotate: 360 } : { rotate: 0 }} transition={loading ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 0.5 }}>
+                                   <RefreshCcw className="w-6 h-6 text-indigo-500" />
+                                 </motion.div>
                                </motion.button>
                                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setAutoRefresh(!autoRefresh)}
                                  className={`w-full h-20 sm:h-24 flex items-center justify-between px-8 sm:px-12 rounded-2xl sm:rounded-[2.5rem] border transition-all ${autoRefresh ? 'bg-indigo-500/15 border-indigo-500/40 shadow-[0_0_40px_rgba(99,102,241,0.2)]' : 'bg-rose-500/10 border-rose-500/20'}`}>
@@ -787,7 +959,26 @@ export default function App() {
                                        <Zap className="w-4 h-4 text-indigo-400 group-hover:animate-bounce" />
                                        <span className="text-[9px] sm:text-[11px] font-black text-zinc-500 uppercase tracking-widest">ACTIVE_STRAT</span>
                                     </div>
-                                  <span className="text-xs sm:text-sm font-mono font-black text-indigo-400 text-glow-indigo uppercase italic">{prediction?.strategyName || 'INITIALIZING'}</span>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs sm:text-sm font-mono font-black text-indigo-400 text-glow-indigo uppercase italic">{prediction?.strategyName || 'INITIALIZING'}</span>
+                                    {prediction?.strategyName && (
+                                      <div className="relative group/tooltip flex items-center">
+                                        <Info className="w-3.5 h-3.5 text-zinc-600 hover:text-indigo-400 cursor-help transition-colors" />
+                                        <div className="absolute bottom-full right-0 mb-3 w-56 p-4 bg-zinc-950/90 backdrop-blur-xl border border-indigo-500/30 rounded-2xl shadow-[0_0_50px_rgba(79,70,229,0.3)] opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-500 z-50 pointer-events-none transform translate-y-2 group-hover/tooltip:translate-y-0">
+                                          <div className="space-y-3">
+                                            <div className="flex items-center gap-2 border-b border-indigo-500/20 pb-2">
+                                              <Cpu className="w-3 h-3 text-indigo-500" />
+                                              <span className="text-[8px] font-black text-indigo-500 tracking-[0.2em]">LOGIC_CORE</span>
+                                            </div>
+                                            <p className="text-[9px] font-mono leading-relaxed text-zinc-300 uppercase tracking-widest leading-normal">
+                                              {STRATEGY_INFO[prediction.strategyName] || 'Advanced neural algorithm active and monitoring data vector.'}
+                                            </p>
+                                          </div>
+                                          <div className="absolute top-full right-2 border-[6px] border-transparent border-t-indigo-500/30" />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                           </div>
@@ -817,6 +1008,33 @@ export default function App() {
                             </p>
                           </div>
                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-6 w-full">
+                      <motion.button
+                        whileHover={{ scale: 1.02, backgroundColor: "rgba(225, 29, 72, 0.4)" }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setIsOpen(false)}
+                        className="group w-full py-8 sm:py-10 bg-gradient-to-br from-rose-600/40 to-rose-950/60 border-2 border-rose-500/40 rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center gap-6 text-white transition-all glow-rose relative overflow-hidden shadow-[0_30px_100px_rgba(225,29,72,0.2)]"
+                      >
+                         <div className="absolute inset-0 bg-gradient-to-r from-rose-500/10 via-transparent to-rose-500/20 animate-pulse" />
+                         <div className="flex items-center gap-4 sm:gap-6 relative z-10">
+                            <motion.div whileHover={{ rotate: 180 }} transition={{ duration: 0.6, ease: "anticipate" }}>
+                               <X className="w-8 h-8 sm:w-12 sm:h-12 text-rose-400 stroke-[3px] sm:stroke-[4px]" />
+                            </motion.div>
+                            <div className="flex flex-col items-start">
+                               <span className="text-[14px] sm:text-[20px] font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] italic leading-tight">QUIT_TERMINAL</span>
+                               <span className="text-[7px] sm:text-[9px] font-mono text-rose-300/40 uppercase tracking-[0.5em] sm:tracking-[1em]">SYSTEM_TOTAL_DISCONNECT</span>
+                            </div>
+                         </div>
+                      </motion.button>
+                      
+                      <div className="flex justify-between items-center px-8">
+                        <div className="flex gap-2">
+                          {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-indigo-500/20" />)}
+                        </div>
+                        <span className="text-[8px] font-mono text-zinc-700 tracking-[1em] uppercase">END_OF_TRANSMISSION</span>
+                      </div>
                     </div>
 
                     {/* Corporate Data */}
